@@ -1,0 +1,796 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/png" href="img/logo.png">
+<title>Lamena Patient App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,300..800;1,300..500&display=swap">
+<style>
+/* Layout concept: one Lamena account, two surfaces. The same app renders as a browser web app and a phone app side by side with shared live state; container queries (not the viewport) pick the layout. Lamena brand: warm cream, plum ink, gold, Jost, arches. Single deliberate light theme. */
+:root{
+  --ground:#FAF6EF; --paper:#FFFFFF; --ink:#2B2630; --muted:#5F5864; --line:#E3D9C6; --soft:#EDE5D5;
+  --gold:#C2A04C; --gold-ink:#8A6A1E; --tint:#F1E7CF; --cream2:#F3ECDD; --stage:#EFE8DA; --bezel:#1E1A22;
+  --warn-bg:#FBF1DA; --warn-line:#E2C27A; --warn-ink:#5A4410;
+  --urgent:#A8231B; --urgent-bg:#FDECE8; --ok:#2F7A55; --ok-bg:#E4F1E8;
+  --font:"Jost",ui-sans-serif,system-ui,"Segoe UI",sans-serif;
+  --h:min(820px,max(640px,calc(100vh - 150px)));
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+body{background:var(--stage);color:var(--ink);font:400 15px/1.5 var(--font);-webkit-font-smoothing:antialiased;overflow-x:hidden;margin:0}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--ink);outline-offset:2px;border-radius:8px}
+h1,h2,h3,p{margin:0}
+h1,h2,h3{letter-spacing:-.02em;text-wrap:balance;line-height:1.15}
+a{color:var(--gold-ink)}
+.kind{font-size:11.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.ph{display:inline-block;background:var(--warn-bg);border:1px dashed #B98A1E;color:var(--warn-ink);border-radius:6px;padding:0 6px;font-size:.92em}
+
+/* ── Showcase shell ── */
+.show{padding:18px clamp(16px,2.5vw,32px) 40px;max-width:1560px;margin-inline:auto}
+.show-head{display:flex;flex-wrap:wrap;align-items:center;gap:14px 24px;margin-bottom:18px}
+.wm{display:flex;align-items:center;gap:10px}
+.wm img{height:38px;width:auto}
+.wm b{display:block;font-size:15px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;line-height:1.1}
+.wm small{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+.show-head .sub{color:var(--muted);font-size:14.5px;flex:1;min-width:220px}
+.seg{display:inline-flex;padding:4px;border-radius:999px;background:var(--paper);border:1px solid var(--line);gap:2px}
+.seg button{border:0;background:transparent;padding:8px 15px;border-radius:999px;font-size:14px;font-weight:500;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:#fff}
+.stage{display:flex;gap:22px;align-items:flex-start;justify-content:center}
+.dev-col{display:flex;flex-direction:column;gap:10px;min-width:0}
+.dev-col.web{flex:1}
+.dev-cap{display:flex;justify-content:space-between;align-items:center;gap:10px;padding-inline:6px;font-size:13px;color:var(--muted)}
+.browser{height:var(--h);border-radius:14px;border:1px solid var(--line);overflow:hidden;background:var(--paper);display:grid;grid-template-rows:42px minmax(0,1fr);box-shadow:0 30px 60px -40px rgba(43,38,48,.5)}
+.chrome{display:flex;align-items:center;gap:12px;padding:0 14px;border-bottom:1px solid var(--line);background:var(--cream2)}
+.chrome i{width:11px;height:11px;border-radius:50%;background:var(--line);display:inline-block;margin-right:6px}
+.chrome .url{flex:1;max-width:420px;margin-inline:auto;background:var(--paper);border-radius:8px;padding:5px 12px;font-size:12.5px;color:var(--muted);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.phone{width:390px;height:var(--h);border-radius:56px;padding:11px;background:var(--bezel);box-shadow:0 40px 70px -40px rgba(30,26,34,.7);flex:none}
+.phone-screen{height:100%;border-radius:45px;overflow:hidden;position:relative;background:var(--ground);display:grid;grid-template-rows:46px minmax(0,1fr)}
+.sbar{display:flex;justify-content:space-between;align-items:center;padding:0 28px 0 32px;font-weight:600;font-size:14px;position:relative;background:var(--paper)}
+.sbar::after{content:"";position:absolute;left:50%;top:10px;translate:-50% 0;width:110px;height:30px;border-radius:20px;background:var(--bezel)}
+.sbar .sig{display:flex;gap:5px;align-items:center}
+.sbar .sig b{width:22px;height:11px;border:1.5px solid currentColor;border-radius:4px;position:relative}
+.sbar .sig b::after{content:"";position:absolute;inset:1.5px 4px 1.5px 1.5px;background:currentColor;border-radius:1.5px}
+.native{height:100dvh;display:grid;grid-template-columns:minmax(0,1fr)}
+
+.why{margin-top:34px;display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.why section{background:var(--paper);border:1px solid var(--line);border-radius:22px;padding:24px;min-width:0}
+.why h2{font-size:24px;font-weight:700;margin:8px 0 14px}
+.why ul{list-style:none;padding:0;margin:0;display:grid}
+.why li{display:grid;grid-template-columns:1fr auto;gap:3px 14px;padding:12px 0;border-top:1px solid var(--soft);align-items:center}
+.why li s{color:var(--muted);font-size:14px;text-decoration-color:rgba(95,88,100,.6)}
+.why li b{font-weight:500;font-size:15px;grid-column:1}
+.why li button{grid-column:2;grid-row:1/3;border:1.5px solid var(--line);background:var(--ground);border-radius:999px;padding:7px 13px;font-size:13px;font-weight:600;white-space:nowrap}
+.why li button:hover{border-color:var(--ink)}
+@media (max-width:900px){.why{grid-template-columns:1fr}}
+
+/* ── App ── */
+.browser,.phone-screen,.native{container:app/inline-size}
+.app{height:100%;min-height:0;position:relative;overflow:hidden;background:var(--ground);display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto}
+.side{display:none}
+.top{display:flex;align-items:center;gap:10px;padding:10px 16px;background:var(--paper);border-bottom:1px solid var(--line)}
+.logo{display:flex;align-items:center;gap:9px}
+.logo img{height:30px;width:auto}
+.logo b{font-size:13px;font-weight:600;letter-spacing:.16em;text-transform:uppercase}
+.sync{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:5px 10px;border-radius:999px;background:var(--ground);border:1px solid var(--line);transition:background .3s,color .3s}
+.sync i{width:6px;height:6px;border-radius:50%;background:var(--ok)}
+.sync.flash{background:var(--ok-bg);color:var(--ok);border-color:transparent}
+.avatar{width:36px;height:36px;border-radius:50%;background:var(--tint);color:var(--ink);display:grid;place-items:center;font-weight:600;font-size:13px;border:0;flex:none}
+.main{overflow-y:auto;overflow-x:hidden;min-height:0}
+.screen{padding:20px 18px 30px;display:flex;flex-direction:column;gap:18px}
+.tabs{display:grid;grid-template-columns:repeat(5,1fr);border-top:1px solid var(--line);background:var(--paper);padding:0 4px env(safe-area-inset-bottom,0px)}
+.tabs button{border:0;background:transparent;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 0 9px;font-size:11.5px;font-weight:600;color:var(--muted);position:relative}
+.tabs button svg{width:22px;height:22px}
+.tabs button[aria-current="page"]{color:var(--ink);box-shadow:inset 0 3px 0 var(--gold)}
+.dotn{position:absolute;top:5px;left:calc(50% + 6px);min-width:17px;height:17px;border-radius:9px;background:var(--gold);color:var(--ink);font-size:10.5px;font-weight:700;line-height:17px;padding:0 4px;text-align:center}
+
+@container app (min-width:760px){
+  .app{grid-template-columns:240px minmax(0,1fr);grid-template-rows:auto minmax(0,1fr)}
+  .side{display:flex;flex-direction:column;gap:4px;grid-row:1/3;background:var(--paper);border-right:1px solid var(--line);padding:18px 12px;overflow-y:auto}
+  .side .logo{padding:2px 10px 18px}
+  .side .logo img{height:40px}
+  .side .logo b{font-size:14px;line-height:1.15}
+  .side .logo small{display:block;font-size:11.5px;color:var(--muted);letter-spacing:.02em;text-transform:none;font-weight:400}
+  .side nav{display:grid;gap:2px}
+  .side nav button{display:flex;align-items:center;gap:12px;border:0;background:transparent;padding:11px 12px;border-radius:12px;font-size:15px;font-weight:500;color:var(--muted);text-align:left;position:relative}
+  .side nav button svg{width:20px;height:20px}
+  .side nav button:hover{background:var(--ground);color:var(--ink)}
+  .side nav button[aria-current="page"]{background:var(--tint);color:var(--ink);font-weight:600}
+  .side nav .dotn{position:static;margin-left:auto}
+  .side .cta{margin:4px 0 16px}
+  .side .foot{margin-top:auto;font-size:12.5px;color:var(--muted);padding:12px;border-radius:14px;background:var(--ground);border:1px solid var(--line)}
+  .side .foot b{color:var(--urgent);font-weight:600}
+  .top{grid-column:2;padding:12px 28px}
+  .top .logo{display:none}
+  .main{grid-column:2}
+  .tabs{display:none}
+  .screen{padding:28px 34px 44px;gap:20px;max-width:1120px}
+  .app .phone-only{display:none!important}
+  .app .web-only{display:flex!important}
+}
+.web-only{display:none!important}
+
+/* blocks */
+.hello h1{font-size:28px;font-weight:700;letter-spacing:-.03em}
+@container app (min-width:760px){.hello h1{font-size:38px}}
+.hello p{color:var(--muted);font-size:16px;margin-top:6px;max-width:60ch}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:22px;padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.card h3{font-size:19px;font-weight:600}
+.row{display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap}
+.plum{background:var(--ink);color:#fff;border:0}
+.plum .kind{color:var(--tint)}
+.plum .meta{color:var(--tint);font-size:14.5px}
+.arch{border-radius:120px 120px 22px 22px;padding-top:34px;text-align:left}
+.archmark{width:28px;opacity:.95}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:12.5px;font-weight:600;background:var(--tint);color:var(--ink);white-space:nowrap}
+.badge.req{background:var(--warn-bg);color:var(--warn-ink);border:1px solid var(--warn-line)}
+.badge.ok{background:var(--ok-bg);color:var(--ok)}
+.badge.bad{background:var(--urgent-bg);color:var(--urgent)}
+.plum .badge{background:rgba(255,255,255,.14);color:#fff}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:14px;min-height:46px;padding:0 18px;font-size:15px;font-weight:600;border:0;text-decoration:none;transition:transform .15s}
+.btn:active{transform:scale(.98)}
+.btn.gold{background:var(--gold);color:var(--ink)}
+.btn.ink{background:var(--ink);color:#fff}
+.btn.line{background:var(--paper);color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--ink)}
+.btn.ghost{background:transparent;color:var(--ink);padding:0 4px;text-decoration:underline;text-underline-offset:4px;text-decoration-color:var(--gold)}
+.plum .btn.line{background:transparent;color:#fff;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.5)}
+.plum .btn.gold{background:var(--gold)}
+.btn.wide{width:100%;min-height:54px;font-size:16.5px}
+.btn[disabled]{opacity:.4;cursor:not-allowed}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+.muted{color:var(--muted)}
+.small{font-size:13.5px}
+.grid2{display:grid;gap:18px;grid-template-columns:minmax(0,1fr)}
+.grid2>div{display:flex;flex-direction:column;gap:18px;min-width:0}
+@container app (min-width:760px){.grid2{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);align-items:start}}
+
+.datebox{flex:none;width:58px;border-radius:14px;background:var(--tint);padding:8px 0;display:flex;flex-direction:column;align-items:center;color:var(--ink)}
+.plum .datebox{background:rgba(255,255,255,.12);color:#fff}
+.dwd{font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.dnum{font-size:22px;font-weight:700;line-height:1.1}
+.quick{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.qlink{display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 4px;border-radius:18px;border:1px solid var(--line);background:var(--paper);font-size:12.5px;font-weight:600;text-align:center;position:relative;line-height:1.2}
+.qlink svg{width:24px;height:24px}
+.qlink:hover{border-color:var(--ink)}
+.qlink .dotn{top:8px;left:auto;right:10px}
+.hscroll{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:6px}
+.hscroll>*{scroll-snap-align:start}
+.rescard{flex:none;width:220px;text-align:left;background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:6px;min-height:118px}
+.rescard:hover{border-color:var(--ink)}
+.rescard b{font-size:16px;font-weight:600;line-height:1.3}
+.track{display:grid;grid-template-columns:repeat(var(--n),1fr);gap:6px}
+.track .st{display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--muted)}
+.track .st i{height:6px;border-radius:3px;background:var(--line)}
+.track .st.on i{background:var(--gold)}
+.track .st.on{color:var(--ink);font-weight:500}
+
+/* flow */
+.flowhead{background:var(--paper);border-bottom:1px solid var(--line);margin:-20px -18px 0;padding:12px 18px 16px;display:flex;flex-direction:column;gap:10px;position:sticky;top:0;z-index:2}
+@container app (min-width:760px){.flowhead{margin:-28px -34px 0;padding:16px 34px 18px}}
+.bars{display:flex;gap:6px}
+.bars i{flex:1;height:6px;border-radius:3px;background:var(--line)}
+.bars i.on{background:var(--gold)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font-size:14.5px;font-weight:500;line-height:1.2;padding:10px 15px;min-height:44px;border-radius:999px;border:1.5px solid var(--line);background:var(--paper);color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.chip.sug{background:var(--tint);border-color:transparent}
+.q{display:flex;flex-direction:column;gap:10px}
+.q>h2,.q>label.h{font-size:18px;font-weight:600}
+textarea.big{width:100%;min-height:110px;resize:vertical;border:1.5px solid var(--line);border-radius:16px;padding:14px;background:var(--paper);font-size:16px;line-height:1.45}
+textarea.big:focus{outline:none;border-color:var(--ink);box-shadow:0 0 0 4px rgba(194,160,76,.25)}
+.opt{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:14px;border-radius:16px;border:1.5px solid var(--line);background:var(--paper);min-height:62px}
+.opt[aria-pressed="true"]{border-color:var(--ink);background:var(--tint);box-shadow:inset 0 0 0 1px var(--ink)}
+.radio{width:22px;height:22px;border-radius:50%;border:2px solid #8C8394;flex:none;background:#fff}
+.opt[aria-pressed="true"] .radio{border:7px solid var(--ink)}
+.opt b{display:block;font-weight:600;font-size:16px}
+.opt span.s{display:block;font-size:13.5px;color:var(--muted);margin-top:1px}
+.opt .price{margin-left:auto;font-weight:600;font-size:14.5px;white-space:nowrap}
+.days{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+.day{flex:none;width:64px;min-height:76px;border-radius:16px;border:1.5px solid var(--line);background:var(--paper);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px}
+.day[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.slots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+@container app (min-width:760px){.slots{grid-template-columns:repeat(5,minmax(0,1fr))}}
+.slot{min-height:48px;border-radius:12px;border:1.5px solid var(--line);background:var(--paper);font-weight:600;font-size:15px;font-variant-numeric:tabular-nums}
+.slot[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.alert{border-radius:18px;padding:16px;display:flex;gap:12px;align-items:flex-start}
+.alert.red{background:var(--urgent-bg);border:2px solid var(--urgent)}
+.alert.red h3{color:var(--urgent);font-size:17px}
+.alert.gold{background:var(--warn-bg);border:1.5px solid var(--warn-line);flex-direction:column}
+.alert svg{flex:none}
+.big999{font-size:26px;font-weight:700;color:var(--urgent);letter-spacing:.02em}
+.res{display:flex;gap:12px;align-items:center;padding:11px 12px;border-radius:14px;background:var(--paper);border:1px solid var(--line);text-align:left;width:100%}
+.res:hover{border-color:var(--ink)}
+.res .th{width:40px;height:40px;border-radius:12px 12px 6px 6px;background:var(--tint);display:grid;place-items:center;flex:none;font-size:10px;font-weight:700;letter-spacing:.06em;color:var(--gold-ink)}
+.res b{font-weight:600;display:block;line-height:1.3}
+.res .why2{font-size:12.5px;color:var(--muted)}
+.res mark{background:var(--tint);color:var(--ink);border-radius:4px;padding:0 3px}
+.res .go{margin-left:auto;color:var(--muted)}
+.photos{display:flex;gap:8px;flex-wrap:wrap}
+.photos img{width:64px;height:64px;object-fit:cover;border-radius:12px;border:1px solid var(--line)}
+.upload{width:64px;height:64px;border-radius:12px;border:1.5px dashed #CFC3AB;display:grid;place-items:center;color:var(--muted);cursor:pointer;position:relative}
+.upload input{position:absolute;opacity:0;width:1px;height:1px}
+.reqgrid{display:grid;gap:20px;grid-template-columns:minmax(0,1fr)}
+.reqgrid>div{display:flex;flex-direction:column;gap:20px;min-width:0}
+@container app (min-width:760px){.reqgrid{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);align-items:start}.aside{position:sticky;top:110px}}
+.review{background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:4px 18px}
+.review div{padding:12px 0;border-bottom:1px solid var(--soft);display:flex;flex-direction:column;gap:2px}
+.review div:last-child{border-bottom:0}
+.review b{font-weight:500;font-size:16px}
+.flowfoot{position:sticky;bottom:0;background:linear-gradient(transparent,var(--ground) 30%);padding-top:18px;margin-top:-6px;display:flex;flex-direction:column;gap:8px}
+
+/* lists, sheets, misc */
+.li{display:flex;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--soft);text-align:left;background:transparent;border-left:0;border-right:0;border-bottom:0;width:100%}
+.li:first-child{border-top:0}
+.li .ic{width:40px;height:40px;border-radius:12px;background:var(--tint);display:grid;place-items:center;flex:none}
+.li .ic svg{width:19px;height:19px}
+.li .tx{flex:1;min-width:0}
+.li .tx b{font-weight:600;display:block}
+.li .tx span{font-size:13.5px;color:var(--muted)}
+.scrim{position:absolute;inset:0;background:rgba(30,26,34,.45);display:flex;align-items:flex-end;z-index:20;animation:fade .2s}
+.sheet{background:var(--paper);width:100%;max-height:88%;overflow-y:auto;border-radius:26px 26px 0 0;padding:10px 20px 24px;display:flex;flex-direction:column;gap:14px;animation:up .28s cubic-bezier(.2,.8,.2,1)}
+.sheet .grab{width:40px;height:5px;border-radius:5px;background:var(--line);align-self:center}
+.sheet-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.sheet-head h2{font-size:23px;font-weight:700;margin-top:4px}
+.x{border:0;background:var(--ground);width:36px;height:36px;border-radius:50%;flex:none;font-size:20px;line-height:1;color:var(--muted)}
+@container app (min-width:760px){.scrim{align-items:stretch;justify-content:flex-end}.sheet{width:460px;max-height:none;height:100%;border-radius:0;padding:26px;animation:inr .28s cubic-bezier(.2,.8,.2,1)}.sheet .grab{display:none}}
+@keyframes fade{from{opacity:0}}
+@keyframes up{from{transform:translateY(40px);opacity:0}}
+@keyframes inr{from{transform:translateX(40px);opacity:0}}
+.bul{margin:0;padding-left:18px;display:grid;gap:6px}
+.save{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 13px;border-radius:999px;border:1.5px solid var(--line);background:var(--paper);font-weight:600;font-size:13px;flex:none}
+.save[aria-pressed="true"]{background:var(--tint);border-color:var(--ink)}
+.save[aria-pressed="true"] svg{fill:currentColor}
+.toast{position:absolute;left:50%;bottom:90px;translate:-50% 0;background:var(--ink);color:#fff;padding:10px 16px;border-radius:999px;font-size:13.5px;font-weight:500;z-index:30;white-space:nowrap;max-width:92%;overflow:hidden;text-overflow:ellipsis;animation:up .25s}
+@container app (min-width:760px){.toast{bottom:28px}}
+.empty{padding:22px;text-align:center;color:var(--muted);border:1.5px dashed #CFC3AB;border-radius:18px;background:var(--paper)}
+.seg2{display:inline-flex;padding:4px;border-radius:999px;background:var(--paper);border:1px solid var(--line);gap:2px;align-self:flex-start;flex-wrap:wrap}
+.seg2 button{border:0;background:transparent;padding:8px 15px;border-radius:999px;font-size:14px;font-weight:500;color:var(--muted)}
+.seg2 button[aria-pressed="true"]{background:var(--ink);color:#fff}
+.search{width:100%;border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;background:var(--paper);font-size:16px}
+.libgrid{display:grid;gap:10px;grid-template-columns:minmax(0,1fr)}
+@container app (min-width:760px){.libgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+table.vals{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:14px}
+table.vals td{padding:10px 0;border-top:1px solid var(--soft)}
+table.vals td:nth-child(2){text-align:right;font-weight:600}
+table.vals td:nth-child(3){color:var(--muted);text-align:right;font-size:12.5px;padding-left:10px}
+.bar{position:relative;height:6px;border-radius:6px;background:var(--tint);margin-top:5px}
+.bar i{position:absolute;top:-3px;width:12px;height:12px;border-radius:50%;background:var(--ink);translate:-50% 0;border:2px solid var(--paper)}
+.thread{display:flex;flex-direction:column;gap:10px}
+.msg{max-width:86%;padding:10px 13px;border-radius:16px;font-size:14.5px;background:var(--ground);border:1px solid var(--line)}
+.msg.me{align-self:flex-end;background:var(--ink);color:#fff;border:0}
+.msg .who{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;opacity:.65;margin-bottom:3px}
+.compose{display:flex;gap:8px}
+.compose input{flex:1;min-width:0;border:1.5px solid var(--line);border-radius:999px;padding:10px 14px;background:var(--paper)}
+.toggle{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--soft)}
+.sw{width:46px;height:28px;border-radius:14px;background:var(--line);border:0;position:relative;flex:none}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:left .2s}
+.sw[aria-checked="true"]{background:var(--ink)}
+.sw[aria-checked="true"]::after{left:21px}
+.loading{display:grid;place-items:center;height:60vh;color:var(--muted)}
+.pop{animation:up .35s ease both}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="root"><div class="loading">Loading the Lamena patient app…</div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/htm@3.1.1/dist/htm.umd.js"></script>
+<script>
+(function(){
+const {useState,useEffect,useReducer,useRef,useMemo,useCallback}=React;
+const html=htm.bind(React.createElement);
+const LOGO='img/logo.png';
+const PHONE='+44 7496 859665';
+
+/* icons */
+const P={
+  home:'M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z',
+  plus:'M12 5v14M5 12h14',
+  cal:'M3 6.5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM3 9.5h18M8 2.5v4M16 2.5v4',
+  book:'M4 4.5A1.5 1.5 0 0 1 5.5 3H20v15H5.5A1.5 1.5 0 0 0 4 19.5zM4 19.5A1.5 1.5 0 0 0 5.5 21H20v-3',
+  inbox:'M4 13l2.5-8h11L20 13v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1zM4 13h5l1 2h4l1-2h5',
+  user:'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0',
+  card:'M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM7 10h6M7 14h4',
+  doc:'M7 3h8l4 4v14H7zM15 3v4h4M10 13h6M10 17h6',
+  chat:'M4 5h16v11H9l-5 4z',
+  check:'M5 12.5l4.5 4.5L19 7.5',
+  video:'M2.5 7.5A1.5 1.5 0 0 1 4 6h10a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 14 18H4a1.5 1.5 0 0 1-1.5-1.5zM15.5 10.5l6-3.5v10l-6-3.5z',
+  phone:'M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z',
+  pin:'M12 21s7-6 7-12a7 7 0 1 0-14 0c0 6 7 12 7 12zM12 11.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z',
+  clock:'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3 2',
+  bookmark:'M6 3h12v18l-6-4-6 4z',
+  out:'M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5',
+  warn:'M12 3l10 18H2zM12 10v5M12 18.5v.01',
+  bulb:'M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z',
+  cam:'M4 8h3l2-3h6l2 3h3v11H4zM12 16.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z',
+  lock:'M5 11h14v10H5zM8 11V8a4 4 0 0 1 8 0v3',
+  back:'M15 5l-7 7 7 7',
+  arrow:'M9 5l7 7-7 7',
+  flask:'M9 3h6M10 3v6L4.5 18.5A2 2 0 0 0 6.3 21.5h11.4a2 2 0 0 0 1.8-3L14 9V3M7 15h10',
+};
+const Ic=({n,w,sw})=>html`<svg viewBox="0 0 24 24" width=${w||20} height=${w||20} fill="none" stroke="currentColor" stroke-width=${sw||1.9} stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d=${P[n]}/></svg>`;
+
+/* dates */
+const NOW=new Date();
+const at=(days,h,m)=>{const d=new Date(NOW);d.setDate(d.getDate()+days);d.setHours(h,m||0,0,0);return d.getTime()};
+const sameDay=(a,b)=>a.toDateString()===b.toDateString();
+const dayLabel=t=>{const d=new Date(t),tm=new Date(NOW);tm.setDate(tm.getDate()+1);if(sameDay(d,NOW))return'Today';if(sameDay(d,tm))return'Tomorrow';return d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})};
+const hm=t=>new Date(t).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+const when=t=>dayLabel(t)+', '+hm(t);
+const wd=t=>{const d=new Date(t);return sameDay(d,NOW)?'Today':d.toLocaleDateString('en-GB',{weekday:'short'})};
+const greet=()=>{const h=NOW.getHours();return h<12?'Good morning':h<18?'Good afternoon':'Good evening'};
+let uid=100;const id=p=>p+(++uid);
+const OPEN_DAYS=(()=>{const out=[];for(let i=0;out.length<7&&i<12;i++){const d=new Date(NOW);d.setDate(d.getDate()+i);if(d.getDay()!==0)out.push(i)}return out})();
+const slotsFor=off=>{const d=new Date(NOW);d.setDate(d.getDate()+off);const sat=d.getDay()===6;
+  const base=sat?[[9,0],[10,20],[11,40]]:(off%2?[[8,40],[9,20],[12,30],[15,0],[17,20],[18,30]]:[[9,0],[10,20],[11,40],[14,0],[16,30],[18,10],[19,20]]);
+  return base.map(([h,m])=>at(off,h,m)).filter(t=>t>Date.now()+45*60e3)};
+
+/* NHS-linked library */
+const LIB=[
+ {id:'headache',t:'Headaches',cat:'Common illness',m:4,url:'https://www.nhs.uk/conditions/headaches/',kw:['headache','head','migraine','throbbing'],ch:['Headache'],
+  sum:'Most headaches are not serious and get better with rest, fluids and simple painkillers.',
+  self:['Drink plenty of water and rest','Use painkillers on no more than a few days a week','Keep a diary to spot triggers such as screens, sleep or caffeine'],
+  help:['A sudden, very severe headache: call 999','Headache with a stiff neck, fever or a rash','Headaches that keep coming back or are getting worse']},
+ {id:'migraine',t:'Migraine',cat:'Common illness',m:5,url:'https://www.nhs.uk/conditions/migraine/',kw:['migraine','aura','flashing','light sensitive'],ch:['Headache'],
+  sum:'Migraine is a moderate or severe headache, often with feeling sick and sensitivity to light.',
+  self:['Rest in a dark, quiet room','Take painkillers early in an attack'],help:['Weakness or numbness on one side of the body: call 999']},
+ {id:'fever-kids',t:'Fever in children',cat:'Children',m:4,url:'https://www.nhs.uk/conditions/fever-in-children/',kw:['temperature','fever','hot','son','daughter','child','baby','toddler'],ch:['Fever'],
+  sum:'A high temperature is very common in children and is usually caused by an infection the body can fight.',
+  self:['Give plenty of fluids','Paracetamol or ibuprofen if your child is distressed (check the label)','Check on your child during the night'],
+  help:['Under 3 months with a temperature of 38°C or higher','A rash that does not fade under a glass: call 999','Floppy, hard to wake, or breathing fast']},
+ {id:'cold',t:'Coughs and colds',cat:'Common illness',m:3,url:'https://www.nhs.uk/conditions/common-cold/',kw:['cold','cough','runny nose','blocked','sneezing','chesty','phlegm'],ch:['Cough or cold'],
+  sum:'Colds usually get better within 1 to 2 weeks. A cough can last 3 to 4 weeks.',
+  self:['Rest, drink fluids and eat well','Hot lemon and honey (not for babies under 1)','Steam can ease a blocked nose'],help:['A cough for more than 3 weeks','Coughing up blood','Feeling short of breath']},
+ {id:'sore-throat',t:'Sore throat',cat:'Common illness',m:3,url:'https://www.nhs.uk/conditions/sore-throat/',kw:['sore throat','throat','swallow','tonsil'],ch:['Sore throat'],
+  sum:'Sore throats usually get better by themselves within a week.',
+  self:['Gargle warm salty water (adults only)','Drink plenty of fluids and eat soft, cool foods','Paracetamol or ibuprofen can help'],help:['No better after a week','Difficulty breathing or swallowing: call 999']},
+ {id:'dv',t:'Diarrhoea and vomiting',cat:'Common illness',m:4,url:'https://www.nhs.uk/conditions/diarrhoea-and-vomiting/',kw:['diarrhoea','diarrhea','vomit','sick','stomach','tummy','nausea'],ch:['Stomach'],
+  sum:'Usually caused by a stomach bug and should pass in a few days.',
+  self:['Small sips of fluid, often','Rest, and eat when you feel able'],help:['Signs of dehydration, such as peeing much less','Blood in your poo or vomit']},
+ {id:'rash',t:'Skin rashes',cat:'Skin',m:4,url:'https://www.nhs.uk/conditions/rashes-babies-and-children/',kw:['rash','spots','itchy','hives','skin','red skin','eczema'],ch:['Skin or rash'],
+  sum:'Most rashes are harmless and settle on their own. A photo helps your GP see what it looks like.',
+  self:['Keep skin cool and avoid tight clothing','Unperfumed moisturiser can soothe dry, itchy skin'],help:['A rash that does not fade under a glass: call 999']},
+ {id:'back',t:'Back pain',cat:'Muscles and joints',m:5,url:'https://www.nhs.uk/conditions/back-pain/',kw:['back','lower back','sciatica','joint','knee','shoulder','neck pain'],ch:['Joint or back pain'],
+  sum:'Back pain is common and usually improves within a few weeks.',
+  self:['Stay as active as you can','Try heat packs and gentle stretches'],help:['Numbness around your bottom or genitals, or problems peeing: go to A&E']},
+ {id:'anxiety',t:'Anxiety',cat:'Mental health',m:6,url:'https://www.nhs.uk/mental-health/conditions/generalised-anxiety-disorder/',kw:['anxious','anxiety','worry','panic','stress','nervous'],ch:['Low mood or anxiety'],
+  sum:'Feeling anxious sometimes is normal. If it is affecting your daily life, help is available.',
+  self:['Breathing exercises and regular activity','Talk to someone you trust'],help:['You feel you cannot cope','Thoughts of harming yourself: call 111 and choose option 2']},
+ {id:'low-mood',t:'Low mood and depression',cat:'Mental health',m:6,url:'https://www.nhs.uk/mental-health/conditions/depression-in-adults/',kw:['low','depressed','sad','mood','down','tearful','sleep','tired'],ch:['Low mood or anxiety','Tiredness'],
+  sum:'Low mood often lifts after a few days or weeks. If it lasts longer, talk to us.',
+  self:['Keep a routine and get outside each day','Stay in touch with people'],help:['Low mood for more than 2 weeks','Thoughts of ending your life: call 111 option 2, or Samaritans on 116 123']},
+ {id:'tired',t:'Tiredness and fatigue',cat:'General health',m:4,url:'https://www.nhs.uk/conditions/tiredness-and-fatigue/',kw:['tired','exhausted','fatigue','no energy'],ch:['Tiredness'],
+  sum:'Feeling tired all the time is common. A blood test can rule out causes such as anaemia or thyroid problems.',
+  self:['Regular sleep and wake times','Cut down on caffeine and alcohol'],help:['Tiredness with weight loss you cannot explain']},
+ {id:'bloods',t:'Preparing for a blood test',cat:'Before your visit',m:2,url:'https://www.nhs.uk/tests-and-treatments/blood-tests/',kw:['blood test','bloods','fasting'],ch:[],
+  sum:'Most blood tests need no preparation. Some need you to fast. We\'ll tell you when you book.',
+  self:['Drink water beforehand: it makes the test easier','Wear a top with loose sleeves'],help:[]},
+ {id:'sexual',t:'Sexual health checks',cat:'Sexual health',m:3,url:'https://www.nhs.uk/conditions/sexually-transmitted-infections-stis/',kw:['sti','sexual','discharge','burning','pee'],ch:[],
+  sum:'Many STIs have no symptoms. A confidential check is quick and simple.',
+  self:['Avoid sex until you\'ve been checked'],help:['Severe pain in your lower tummy']},
+];
+const RED=[
+ {re:/chest (pain|tight)|crushing|pain (in|down) (my )?(left )?arm|heart attack/i,t:'Chest pain can be a sign of a heart attack'},
+ {re:/can'?t breathe|cannot breathe|struggling to breathe|gasping|lips (are |look )?blue/i,t:'Severe difficulty breathing is an emergency'},
+ {re:/face (is )?droop|slurred|stroke/i,t:'These can be signs of a stroke'},
+ {re:/(does ?n[o']?t|won'?t|not) fade|glass test|meningitis|stiff neck/i,t:'A rash that does not fade, or a stiff neck with fever, can be serious'},
+ {re:/unconscious|seizure|fitting|collapsed/i,t:'This needs emergency help'},
+ {re:/suicid|kill myself|end (my|it) (life|all)|don'?t want to (live|be here)|self.?harm|hurt myself|feeling unsafe/i,t:'You deserve support right now',mh:true},
+];
+const SYMPTOMS=['Headache','Fever','Cough or cold','Sore throat','Stomach','Skin or rash','Joint or back pain','Low mood or anxiety','Tiredness','Chest pain','Something else'];
+const matchRes=(text,chips)=>{const t=' '+(text||'').toLowerCase()+' ';
+  return LIB.map(r=>{const kh=r.kw.filter(k=>t.includes(k));const ch=r.ch.filter(c=>chips.includes(c));return{r,hit:kh[0]||ch[0],score:kh.reduce((a,k)=>a+k.length,0)+ch.length*6}}).filter(x=>x.score>0).sort((a,b)=>b.score-a.score).slice(0,4)};
+
+const SERVICES=[{id:'gp',t:'General Practice',s:'New or ongoing concerns',p:'From £75',modes:['In person','Telephone','Video call']},{id:'blood',t:'Blood test',s:'At the clinic',p:'£[price]',modes:['In person']},{id:'sexual',t:'Sexual health',s:'Confidential checks and advice',p:'£[price]',modes:['In person','Telephone','Video call']},{id:'annual',t:'Annual medical',s:'A thorough yearly check',p:'£[price]',modes:['In person']},{id:'medical',t:'Medical',s:"When you need a doctor's report",p:'£[price]',modes:['In person']}];
+const MODES=[{id:'In person',s:'Vision Park, Histon',ic:'pin'},{id:'Telephone',s:'We call you at your time',ic:'phone'},{id:'Video call',s:'Join from the app',ic:'video'}];
+const DUR=['Today','A few days','About a week','Longer'];
+const IMPACT=['A little','Quite a lot','A great deal'];
+const EXAMPLES=['A throbbing headache since Monday, worse in the evenings','Sore throat for 4 days, hard to swallow','Feeling tired all the time','My son has a temperature and a rash'];
+const priceTxt=p=>p.includes('[')?html`<span className="ph">${p}</span>`:p;
+
+/* example account */
+const firstToday=(()=>{const s=slotsFor(0);return s.length?s[Math.min(1,s.length-1)]:slotsFor(OPEN_DAYS[1])[1]})();
+const init={
+ me:{name:'Alex Morgan',first:'Alex',dob:'14 Mar 1988',email:'alex@example.com',member:true},
+ prefs:{sms:true,female:false,longer:false,interpreter:false},
+ appts:[
+  {id:'a1',svc:'General Practice',mode:'Video call',t:firstToday,status:'Confirmed',who:'Dr [Name]',note:'Persistent cough, 2 weeks',late:0},
+  {id:'a2',svc:'Blood test',mode:'In person',t:at(OPEN_DAYS[3],8,40),status:'Confirmed',who:'Nurse clinic',note:'Fasting bloods: no food after 10pm the night before'},
+ ],
+ past:[{id:'p1',svc:'Blood test',mode:'In person',t:at(-24,9,40),who:'Nurse clinic',summary:'Full blood count and thyroid function. Results are in your inbox.'}],
+ results:[
+  {id:'r1',name:'Thyroid function',t:at(-22,10,0),verdict:'Normal',tone:'ok',unread:true,note:'Your thyroid levels are within the normal range. Nothing further needed. Reviewed by Dr [Name].',vals:[['TSH','1.8','0.3–4.2 mU/L',.35],['Free T4','15','12–22 pmol/L',.3]]},
+  {id:'r2',name:'Full blood count',t:at(-22,10,0),verdict:'Normal',tone:'ok',unread:false,note:'All within the normal range. No action needed.',vals:[['Haemoglobin','138','130–180 g/L',.2],['White cells','6.4','4.0–11.0 ×10⁹/L',.4],['Platelets','251','150–400 ×10⁹/L',.4]]},
+ ],
+ docs:[{id:'d1',t:'Referral letter: physiotherapy',s:'Ready to download',tone:'ok',when:at(-20,12,0)},{id:'d2',t:'Private prescription',s:'Sent to your pharmacy',tone:'ok',when:at(-20,12,5)},{id:'d3',t:'Fit note',s:'With your GP',tone:'req',when:at(-1,16,0)}],
+ msgs:[{id:'g1',me:false,who:'Dr [Name]',t:at(-1,9,12),text:'Hi Alex, your blood results look normal. Let\'s talk about the cough at today\'s video appointment.'}],
+ saved:['bloods'],
+ draft:{forWho:'Me',chips:[],text:'',dur:'',impact:'',photos:[],ack:false,svc:'gp',mode:'Video call',day:OPEN_DAYS[0]===0&&slotsFor(0).length?0:OPEN_DAYS[1],slot:null},
+ sync:{n:0,src:'',label:''},
+ nav:{n:0,tab:'home'},
+};
+const LABEL={'req:submit':'Appointment requested','appt:checkin':'Checked in','appt:cancel':'Appointment cancelled','appt:resched':'Appointment moved','late':'We know you\'re running late','msg:send':'Message sent','save':'Saved to your library','unsave':'Removed from your library','pref':'Preferences saved'};
+
+function reducer(s,a){
+ const bump=ns=>{const l=LABEL[a.type];return l?{...ns,sync:{n:s.sync.n+1,src:a.src||'',label:l}}:ns};
+ switch(a.type){
+  case'nav':return{...s,nav:{n:s.nav.n+1,tab:a.tab}};
+  case'draft':return{...s,draft:{...s.draft,...a.patch}};
+  case'draft:reset':return{...s,draft:{...init.draft}};
+  case'req:submit':{const d=s.draft,svc=SERVICES.find(x=>x.id===d.svc);
+   const ap={id:a.id,svc:svc.t,mode:d.mode,t:d.slot,status:'Awaiting confirmation',who:'Lamena GP',note:[d.chips.join(', '),d.text].filter(Boolean).join(' · ')||'No details added',forWho:d.forWho,price:svc.p};
+   return bump({...s,appts:[...s.appts,ap].sort((x,y)=>x.t-y.t),draft:{...init.draft}})}
+  case'req:confirm':return{...s,sync:{n:s.sync.n+1,src:'clinic',label:'Your appointment is confirmed'},appts:s.appts.map(x=>x.id===a.id?{...x,status:'Confirmed',who:'Dr [Name]'}:x)};
+  case'appt:checkin':return bump({...s,appts:s.appts.map(x=>x.id===a.id?{...x,checked:true}:x)});
+  case'late':return bump({...s,appts:s.appts.map(x=>x.id===a.id?{...x,toldLate:true}:x)});
+  case'appt:cancel':return bump({...s,appts:s.appts.filter(x=>x.id!==a.id)});
+  case'appt:resched':return bump({...s,appts:s.appts.map(x=>x.id===a.id?{...x,t:a.t,checked:false}:x).sort((x,y)=>x.t-y.t)});
+  case'msg:send':return bump({...s,msgs:[...s.msgs,{id:id('g'),me:true,who:'You',t:Date.now(),text:a.text}]});
+  case'msg:auto':return{...s,sync:{n:s.sync.n+1,src:'clinic',label:'New message from the clinic'},msgs:[...s.msgs,{id:id('g'),me:false,who:'Lamena Clinics',t:Date.now(),text:'Thanks Alex, your GP has your message and will reply here. For anything urgent, call us on '+PHONE+'.'}]};
+  case'res:read':return{...s,results:s.results.map(r=>r.id===a.id?{...r,unread:false}:r)};
+  case'save':{const has=s.saved.includes(a.rid);return{...bump({...s,saved:has?s.saved.filter(x=>x!==a.rid):[...s.saved,a.rid]}),sync:{n:s.sync.n+1,src:a.src,label:has?LABEL.unsave:LABEL.save}}}
+  case'pref':return bump({...s,prefs:{...s.prefs,[a.k]:!s.prefs[a.k]}});
+  default:return s;
+ }
+}
+
+/* small parts */
+const DateBox=({t})=>{const d=new Date(t);return html`<div className="datebox"><span className="dwd">${wd(t)}</span><span className="dnum">${d.getDate()}</span><span className="dwd">${d.toLocaleDateString('en-GB',{month:'short'})}</span></div>`};
+const Sheet=({onClose,children,label})=>{useEffect(()=>{const k=e=>{if(e.key==='Escape')onClose()};window.addEventListener('keydown',k);return()=>window.removeEventListener('keydown',k)},[]);
+  return html`<div className="scrim" onClick=${onClose}><div className="sheet" role="dialog" aria-label=${label} onClick=${e=>e.stopPropagation()}><div className="grab"></div>${children}</div></div>`};
+const Head=({title,kicker,onClose})=>html`<div className="sheet-head"><div>${kicker&&html`<p className="kind">${kicker}</p>`}<h2>${title}</h2></div><button className="x" onClick=${onClose} aria-label="Close">×</button></div>`;
+const ResRow=({r,hit,open,s,act})=>html`<div className="res"><button style=${{display:'flex',gap:'12px',alignItems:'center',flex:1,minWidth:0,border:0,background:'transparent',padding:0,textAlign:'left'}} onClick=${()=>open({k:'res',rid:r.id})}>
+  <span className="th">NHS</span><span style=${{minWidth:0}}><b>${r.t}</b><span className="why2">${hit?html`Because you mentioned <mark>${hit}</mark> · `:''}${r.m} min read</span></span></button>
+  <button className="save" aria-pressed=${s.saved.includes(r.id)} onClick=${()=>act('save',{rid:r.id})} aria-label=${(s.saved.includes(r.id)?'Remove ':'Save ')+r.t}><${Ic} n="bookmark" w=${15}/>${s.saved.includes(r.id)?'Saved':'Save'}</button></div>`;
+
+/* HOME */
+function Home({s,go,open,act,startFlow}){
+  const next=s.appts[0];const isToday=next&&sameDay(new Date(next.t),NOW);
+  const pending=s.appts.filter(a=>a.status!=='Confirmed');
+  const unread=s.results.filter(r=>r.unread).length;
+  const featured=[...s.saved.map(id=>LIB.find(r=>r.id===id)).filter(Boolean),...LIB.filter(r=>['headache','cold','tired','anxiety'].includes(r.id)&&!s.saved.includes(r.id))].slice(0,5);
+  return html`<div className="screen">
+   <div className="hello"><p className="kind">${NOW.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'})}</p><h1 style=${{marginTop:'6px'}}>${greet()}, ${s.me.first}</h1><p>Expert care that's simple, welcoming and built around your life.</p></div>
+   <div className="grid2"><div>
+    ${next?html`<section className="card plum">
+      <div className="row"><span className="kind">Your next appointment</span><span className=${'badge'+(next.status==='Confirmed'?'':' req')}>${next.status}</span></div>
+      <div style=${{display:'flex',gap:'14px',alignItems:'center'}}><${DateBox} t=${next.t}/><div style=${{minWidth:0}}><h3 style=${{fontSize:'21px'}}>${next.svc}</h3><p className="meta">${hm(next.t)} · ${next.mode} · ${next.who}</p></div></div>
+      ${next.checked?html`<p className="badge" style=${{alignSelf:'flex-start'}}><${Ic} n="check" w=${14}/>${next.mode==='In person'?"Checked in. We'll call you through.":"You're in the waiting room. Your GP will join shortly."}</p>`
+       :html`<div className="btns">
+        ${isToday?html`<button className="btn gold" onClick=${()=>act('appt:checkin',{id:next.id})}>${next.mode==='Video call'?'Join waiting room':next.mode==='Telephone'?"I'm ready for my call":"I'm here"}</button>`:null}
+        ${isToday&&next.mode==='In person'&&!next.toldLate?html`<button className="btn line" onClick=${()=>act('late',{id:next.id})}>Running late</button>`:null}
+        <button className="btn line" onClick=${()=>open({k:'appt',aid:next.id})}>Details</button></div>`}
+      ${pending.length?html`<p className="meta small">You have ${pending.length} request${pending.length>1?'s':''} waiting for confirmation. We'll text you.</p>`:null}
+    </section>`:html`<div className="empty">No upcoming appointments.</div>`}
+    <section className="card arch" style=${{alignItems:'flex-start'}}>
+      <img className="archmark" src=${LOGO} alt=""/>
+      <span className="kind">Check-in</span>
+      <h3 style=${{fontSize:'22px'}}>Check in and request an appointment</h3>
+      <p className="muted">Share your symptoms, pick a time that suits you, and we'll point you to helpful guides while you wait.</p>
+      <button className="btn ink wide" onClick=${startFlow}>Start check-in <${Ic} n="arrow" w=${18}/></button>
+      <span className="small muted" style=${{display:'flex',gap:'6px',alignItems:'center'}}><${Ic} n="clock" w=${15}/>Takes about 2 minutes · usually seen within 2 hours</span>
+    </section>
+   </div><div>
+    <div className="quick">
+      <button className="qlink" onClick=${()=>go('membership')}><${Ic} n="card"/>Membership</button>
+      <button className="qlink" onClick=${()=>go('inbox')}><${Ic} n="flask"/>Test results${unread?html`<span className="dotn">${unread}</span>`:null}</button>
+      <button className="qlink" onClick=${()=>open({k:'chat'})}><${Ic} n="chat"/>Message us</button>
+      <button className="qlink" onClick=${()=>go('library')}><${Ic} n="book"/>Library</button>
+    </div>
+    <section style=${{display:'flex',flexDirection:'column',gap:'10px'}}>
+      <div className="row"><h2 style=${{fontSize:'20px',fontWeight:600}}>Helpful right now</h2><button className="btn ghost" onClick=${()=>go('library')}>See all</button></div>
+      <div className="hscroll">${featured.map(r=>html`<button key=${r.id} className="rescard" onClick=${()=>open({k:'res',rid:r.id})}><span className="kind">${r.cat} · ${r.m} min</span><b>${r.t}</b><span className="small muted">${s.saved.includes(r.id)?'Saved':'NHS guide'}</span></button>`)}</div>
+    </section>
+    ${s.me.member?html`<section className="card" style=${{background:'var(--tint)',borderColor:'transparent'}}>
+      <div className="row"><span className="kind">Lamena membership</span><span className="badge" style=${{background:'#fff'}}>Active</span></div>
+      <p>Message your GP directly, any time. Replies come here and by text.</p>
+      <button className="btn line" style=${{alignSelf:'flex-start'}} onClick=${()=>open({k:'chat'})}>Message your GP</button></section>`:null}
+    <p className="small muted" style=${{textAlign:'center'}}>Questions? Call ${PHONE}. This app is not for emergencies: call 999.</p>
+   </div></div></div>`;
+}
+
+/* BOOK FLOW */
+function Flow({s,act,open,go,dev,step,setStep}){
+  const d=s.draft;const set=p=>act('draft',{patch:p});
+  const red=RED.find(r=>r.re.test(d.text))||(d.chips.includes('Chest pain')?RED[0]:null);
+  const hits=useMemo(()=>matchRes(d.text,d.chips),[d.text,d.chips.join()]);
+  const svc=SERVICES.find(x=>x.id===d.svc);
+  const toggleChip=c=>set({chips:d.chips.includes(c)?d.chips.filter(x=>x!==c):[...d.chips,c],ack:false});
+  const onFiles=e=>{const f=[...e.target.files].slice(0,4-d.photos.length).map(f=>URL.createObjectURL(f));set({photos:[...d.photos,...f]});e.target.value=''};
+  const slots=slotsFor(d.day);
+  const can1=(d.chips.length||d.text.trim().length>3)&&(!red||d.ack);
+  const can2=!!d.slot;
+  const titles=['Check in','Choose a time','Review and confirm'];
+  const guidance=html`<section className="alert gold pop" aria-live="polite">
+     <div style=${{display:'flex',gap:'10px',alignItems:'flex-start'}}><span style=${{color:'var(--warn-ink)'}}><${Ic} n="bulb" w=${22}/></span><div><h3 style=${{fontSize:'16.5px'}}>${hits.length?'Have you tried these while you wait?':'Guides appear as you type'}</h3><p className="small" style=${{color:'#4B4330',marginTop:'3px'}}>${hits.length?'General self-care from NHS guides. Tap one to read it. It isn\'t a diagnosis.':'Pick a symptom or describe how you feel, and trusted NHS guides that match will show here.'}</p></div></div>
+     ${hits.map(({r,hit})=>html`<${ResRow} key=${r.id} r=${r} hit=${hit} open=${open} s=${s} act=${act}/>`)}
+   </section>`;
+  return html`<div className="screen">
+   <div className="flowhead">
+     <div style=${{display:'flex',alignItems:'center',gap:'8px'}}>
+       <button className="x" aria-label="Back" onClick=${()=>step>1?setStep(step-1):go('home')}><${Ic} n="back" w=${20}/></button>
+       <div><p className="small muted">Step ${step} of 3</p><p style=${{fontSize:'19px',fontWeight:600,lineHeight:1.2}}>${titles[step-1]}</p></div>
+     </div>
+     <div className="bars">${[1,2,3].map(i=>html`<i key=${i} className=${i<=step?'on':''}></i>`)}</div>
+   </div>
+
+   ${step===1?html`<div className="reqgrid"><div>
+     <p className="muted" style=${{fontSize:'16px'}}>Hi ${s.me.first}, tell us what's going on. There are no wrong answers, and you can skip anything you'd rather talk through with the doctor.</p>
+     <div className="q"><h2>Who is this for?</h2><div className="chips">${['Me','My child','Someone else'].map(w=>html`<button key=${w} className="chip" aria-pressed=${d.forWho===w} onClick=${()=>set({forWho:w})}>${w}</button>`)}</div></div>
+     <div className="q"><h2>What's brought you in?</h2><div className="chips" role="group" aria-label="Symptoms">${SYMPTOMS.map(c=>html`<button key=${c} className="chip" aria-pressed=${d.chips.includes(c)} onClick=${()=>toggleChip(c)}>${c}</button>`)}</div></div>
+     ${red?html`<section role="alert" className="alert red pop"><span style=${{color:'var(--urgent)'}}><${Ic} n="warn" w=${26} sw=${2.2}/></span><div style=${{display:'flex',flexDirection:'column',gap:'8px'}}>
+       <h3>${red.mh?'Get support now':'If this is an emergency, call 999 now'}</h3>
+       <p className="small">${red.t}. ${red.mh?'':'Please don\'t wait for an appointment.'}</p>
+       ${red.mh?html`<p className="small">Call <b>NHS 111 and choose option 2</b>, or Samaritans free on <b>116 123</b>, any time. If you might act on these thoughts, call <b>999</b>.</p>`:html`<div className="big999">999</div>`}
+       ${!d.ack?html`<button className="btn ghost" style=${{alignSelf:'flex-start'}} onClick=${()=>set({ack:true})}>This isn't an emergency. Continue.</button>`:html`<p className="small">Noted. We'll flag this for your GP.</p>`}</div></section>`:null}
+     <div className="q"><label className="h" htmlFor=${'txt-'+dev}>Anything else we should know?</label>
+       <textarea id=${'txt-'+dev} className="big" value=${d.text} onChange=${e=>set({text:e.target.value,ack:false})} placeholder="e.g. a throbbing headache since Monday, worse in the evenings"></textarea>
+       ${!d.text?html`<div className="chips">${EXAMPLES.map(x=>html`<button key=${x} className="chip sug" onClick=${()=>set({text:x})}>${x}</button>`)}</div>`:html`<p className="small muted">Your GP reads this before your appointment, so you won't need to repeat it.</p>`}
+     </div>
+     <div className="phone-only" style=${{display:'flex',flexDirection:'column'}}>${guidance}</div>
+     <div className="q"><h2>How long has this been going on?</h2><div className="chips">${DUR.map(x=>html`<button key=${x} className="chip" aria-pressed=${d.dur===x} onClick=${()=>set({dur:x})}>${x}</button>`)}</div></div>
+     <div className="q"><h2>How much is it affecting your day?</h2><div className="chips">${IMPACT.map(x=>html`<button key=${x} className="chip" aria-pressed=${d.impact===x} onClick=${()=>set({impact:x})}>${x}</button>`)}</div></div>
+     <div className="q"><h2>Photos <span className="muted" style=${{fontWeight:400,fontSize:'15px'}}>(optional, useful for skin)</span></h2><div className="photos">${d.photos.map(u=>html`<img key=${u} src=${u} alt="Your photo"/>`)}${d.photos.length<4?html`<label className="upload" title="Add a photo"><${Ic} n="cam"/><input type="file" accept="image/*" multiple onChange=${onFiles}/></label>`:null}</div></div>
+   </div><div className="aside web-only" style=${{flexDirection:'column',gap:'16px'}}>${guidance}</div></div>`:null}
+
+   ${step===2?html`<div className="reqgrid"><div>
+     <div className="q"><h2>What do you need?</h2>${SERVICES.map(o=>html`<button key=${o.id} className="opt" aria-pressed=${d.svc===o.id} onClick=${()=>set({svc:o.id,mode:o.modes.includes(d.mode)?d.mode:o.modes[0]})}><span className="radio"></span><span style=${{minWidth:0}}><b>${o.t}</b><span className="s">${o.s}</span></span><span className="price">${priceTxt(o.p)}</span></button>`)}</div>
+     <div className="q"><h2>How would you like to be seen?</h2>${MODES.filter(m=>svc.modes.includes(m.id)).map(m=>html`<button key=${m.id} className="opt" aria-pressed=${d.mode===m.id} onClick=${()=>set({mode:m.id})}><span className="radio"></span><span style=${{minWidth:0}}><b>${m.id==='In person'?'Face to face':m.id}</b><span className="s">${m.s}</span></span><span style=${{marginLeft:'auto'}}><${Ic} n=${m.ic} w=${22}/></span></button>`)}</div>
+   </div><div>
+     <div className="q"><h2>Pick a day</h2><div className="days" role="group" aria-label="Day">${OPEN_DAYS.map(off=>{const t=at(off,12);const dd=new Date(t);return html`<button key=${off} className="day" aria-pressed=${d.day===off} onClick=${()=>set({day:off,slot:null})}><span className="dwd">${wd(t)}</span><span className="dnum">${dd.getDate()}</span><span className="dwd">${dd.toLocaleDateString('en-GB',{month:'short'})}</span></button>`})}</div></div>
+     <div className="q"><h2>Times on ${dayLabel(at(d.day,12))}</h2>${slots.length?html`<div className="slots">${slots.map(t=>html`<button key=${t} className="slot" aria-pressed=${d.slot===t} onClick=${()=>set({slot:t})}>${hm(t)}</button>`)}</div>`:html`<p className="muted">No more times today. Pick another day.</p>`}</div>
+   </div></div>`:null}
+
+   ${step===3?html`<div className="reqgrid"><div>
+     <p className="muted" style=${{fontSize:'16px'}}>Take a quick look. If anything's not right, tap back to change it.</p>
+     <div className="review">
+       ${[['Appointment',svc.t],['When',d.slot?when(d.slot):'No time chosen'],['How',d.mode==='In person'?'Face to face · Vision Park, Histon':d.mode],['For',d.forWho],['Symptoms',[d.chips.join(', '),d.text].filter(Boolean).join(' · ')||'Nothing added'],['How long · Effect',[d.dur||'Not said',d.impact||'Not said'].join(' · ')]].map(([k,v])=>html`<div key=${k}><span className="kind">${k}</span><b>${v}</b></div>`)}
+       <div><span className="kind">Price</span><b>${priceTxt(svc.p)}</b></div>
+     </div>
+   </div><div>
+     <div className="card" style=${{flexDirection:'row',gap:'12px',alignItems:'flex-start'}}><${Ic} n="lock" w=${20}/><p className="small muted">Your answers go only to the clinical team. You'll pay securely when we confirm, and we'll text you a reminder the day before.</p></div>
+     ${s.saved.length?html`<p className="small muted">${s.saved.length} guide${s.saved.length>1?'s':''} saved to your library for later.</p>`:null}
+   </div></div>`:null}
+
+   <div className="flowfoot">
+     ${step<3?html`<button className="btn gold wide" disabled=${step===1?!can1:!can2} onClick=${()=>setStep(step+1)}>${step===1?'Next: choose a time':'Next: review'}</button>`
+       :html`<button className="btn gold wide" disabled=${!can2} onClick=${()=>act('req:submit',{})}>Request appointment</button>`}
+     ${step===1&&!can1?html`<p className="small muted" style=${{textAlign:'center'}}>Choose a symptom or describe how you feel to continue.</p>`:null}
+   </div>
+  </div>`;
+}
+
+function Done({s,go,open,act}){
+  const last=[...s.appts].sort((a,b)=>b.id.localeCompare(a.id)).find(a=>a.id.startsWith('n'))||s.appts[s.appts.length-1];
+  const list=[...s.saved.map(id=>LIB.find(r=>r.id===id)).filter(Boolean)].slice(0,3);
+  return html`<div className="screen" style=${{alignItems:'stretch'}}>
+   <div style=${{display:'flex',flexDirection:'column',alignItems:'center',textAlign:'center',gap:'12px',paddingTop:'14px'}}>
+     <div style=${{width:'76px',height:'92px',borderRadius:'40px 40px 14px 14px',background:'var(--ink)',display:'grid',placeItems:'center',color:'#fff'}}><${Ic} n="check" w=${36} sw=${2.6}/></div>
+     <h1 style=${{fontSize:'28px'}}>Thank you, ${s.me.first}</h1>
+     <p className="muted" style=${{maxWidth:'34ch'}}>We've received your check-in and appointment request. We'll text you to confirm.</p>
+   </div>
+   ${last?html`<div className="card"><span className="kind">Requested for</span><h3>${when(last.t)}</h3><p className="muted">${last.svc} · ${last.mode}</p><span className=${'badge'+(last.status==='Confirmed'?' ok':' req')} style=${{alignSelf:'flex-start'}}>${last.status}</span></div>`:null}
+   <div className="q"><h2 style=${{fontSize:'18px',fontWeight:600}}>While you wait</h2>
+     ${list.length?list.map(r=>html`<${ResRow} key=${r.id} r=${r} open=${open} s=${s} act=${act}/>`):html`<${ResRow} r=${LIB[0]} open=${open} s=${s} act=${act}/>`}</div>
+   <div style=${{display:'flex',flexDirection:'column',gap:'10px'}}><button className="btn gold wide" onClick=${()=>go('visits')}>View my appointments</button><button className="btn line wide" onClick=${()=>go('home')}>Back to home</button></div>
+   <p className="small muted" style=${{textAlign:'center'}}>If you feel worse before your appointment, call us on ${PHONE}. In an emergency, call 999.</p>
+  </div>`;
+}
+
+function Visits({s,open,startFlow}){
+  return html`<div className="screen">
+   <div className="hello"><h1>Appointments</h1></div>
+   <button className="btn gold wide" onClick=${startFlow}>Request a new appointment</button>
+   <div className="grid2"><div>
+    <h2 style=${{fontSize:'18px',fontWeight:600}}>Upcoming</h2>
+    ${s.appts.length?s.appts.map(a=>html`<button key=${a.id} className="card" style=${{flexDirection:'row',gap:'14px',textAlign:'left',alignItems:'flex-start'}} onClick=${()=>open({k:'appt',aid:a.id})}>
+      <${DateBox} t=${a.t}/><span style=${{display:'flex',flexDirection:'column',gap:'4px',minWidth:0}}><b style=${{fontSize:'16.5px',fontWeight:600}}>${a.svc}</b><span className="small muted">${hm(a.t)} · ${a.mode} · ${a.who}</span><span><span className=${'badge'+(a.checked?' ok':a.status==='Confirmed'?'':' req')}>${a.checked?'Checked in':a.status}</span></span></span></button>`):html`<div className="empty">Nothing booked.</div>`}
+   </div><div>
+    <h2 style=${{fontSize:'18px',fontWeight:600}}>Past</h2>
+    ${s.past.map(a=>html`<div key=${a.id} className="card" style=${{flexDirection:'row',gap:'14px',alignItems:'flex-start'}}><div className="datebox" style=${{background:'var(--cream2)'}}><span className="dwd">${wd(a.t)}</span><span className="dnum">${new Date(a.t).getDate()}</span><span className="dwd">${new Date(a.t).toLocaleDateString('en-GB',{month:'short'})}</span></div>
+      <div style=${{display:'flex',flexDirection:'column',gap:'4px',minWidth:0}}><b style=${{fontWeight:600}}>${a.svc}</b><span className="small muted">${hm(a.t)} · ${a.mode} · Vision Park, Histon</span><p className="small">${a.summary}</p><span><span className="badge" style=${{background:'var(--cream2)'}}>Completed</span></span></div></div>`)}
+   </div></div></div>`;
+}
+
+function Inbox({s,act,open,dev}){
+  const [tab,setTab]=useState('results');
+  return html`<div className="screen">
+   <div className="hello"><h1>Inbox</h1><p>Results, messages and documents, all in one place.</p></div>
+   <div className="seg2">${[['results','Results'],['msgs','Messages'],['docs','Documents']].map(([k,l])=>html`<button key=${k} aria-pressed=${tab===k} onClick=${()=>setTab(k)}>${l}</button>`)}</div>
+   ${tab==='results'?html`<div className="libgrid">${s.results.map(r=>html`<button key=${r.id} className="card" style=${{textAlign:'left'}} onClick=${()=>{act('res:read',{id:r.id});open({k:'result',id:r.id})}}>
+      <div className="row"><span className=${'badge '+r.tone}>${r.verdict}</span>${r.unread?html`<span className="badge req">New</span>`:html`<span className="small muted">${dayLabel(r.t)}</span>`}</div><h3>${r.name}</h3><p className="small muted">${r.note}</p></button>`)}</div>`:null}
+   ${tab==='msgs'?html`<${Chat} s=${s} act=${act} dev=${dev}/>`:null}
+   ${tab==='docs'?html`<div className="card">${s.docs.map(x=>html`<div key=${x.id} className="li"><span className="ic"><${Ic} n="doc"/></span><span className="tx"><b>${x.t}</b><span>${dayLabel(x.when)}</span></span><span className=${'badge '+x.tone}>${x.s}</span></div>`)}</div>`:null}
+  </div>`;
+}
+function Chat({s,act,dev}){
+  const [txt,setTxt]=useState('');const end=useRef(null);
+  useEffect(()=>{end.current&&end.current.scrollIntoView({block:'nearest'})},[s.msgs.length]);
+  const send=e=>{e.preventDefault();if(!txt.trim())return;act('msg:send',{text:txt.trim()});setTxt('')};
+  return html`<div className="card"><div className="row"><span className="kind">Your GP · members' messaging</span></div>
+   <div className="thread">${s.msgs.map(m=>html`<div key=${m.id} className=${'msg'+(m.me?' me':'')}><div className="who">${m.who} · ${when(m.t)}</div>${m.text}</div>`)}<div ref=${end}></div></div>
+   <form className="compose" onSubmit=${send}><label htmlFor=${'msg-'+dev} style=${{position:'absolute',left:'-9999px'}}>Message</label><input id=${'msg-'+dev} value=${txt} onChange=${e=>setTxt(e.target.value)} placeholder="Message your GP"/><button className="btn ink" type="submit">Send</button></form>
+   <p className="small muted">Not for emergencies. For urgent help call ${PHONE}, or 999 in an emergency.</p></div>`;
+}
+
+function Library({s,open,act}){
+  const [q,setQ]=useState('');const [cat,setCat]=useState('All');
+  const cats=['All','Saved',...new Set(LIB.map(r=>r.cat))];
+  const list=LIB.filter(r=>(cat==='All'||(cat==='Saved'?s.saved.includes(r.id):r.cat===cat))&&(!q||(r.t+' '+r.kw.join(' ')).toLowerCase().includes(q.toLowerCase())));
+  return html`<div className="screen">
+   <div className="hello"><h1>Library</h1><p>Trusted NHS guides to help you feel better and prepare for your visit.</p></div>
+   <input className="search" type="search" aria-label="Search the library" placeholder="Search symptoms or conditions" value=${q} onChange=${e=>setQ(e.target.value)}/>
+   <div className="chips">${cats.map(c=>html`<button key=${c} className="chip" aria-pressed=${cat===c} onClick=${()=>setCat(c)}>${c}</button>`)}</div>
+   ${cat==='Saved'&&!list.length?html`<div className="empty">Nothing saved yet. Tap Save on any guide and it will wait for you here.</div>`:null}
+   <div className="libgrid">${list.map(r=>html`<${ResRow} key=${r.id} r=${r} open=${open} s=${s} act=${act}/>`)}</div>
+   ${!list.length&&cat!=='Saved'?html`<div className="empty">No matches. Try another word, or <a href="https://www.nhs.uk/conditions/" target="_blank" rel="noopener">search NHS.uk ↗</a></div>`:null}
+  </div>`;
+}
+
+function Membership({s,open}){
+  return html`<div className="screen">
+   <div className="hello"><h1>Membership</h1><p>Direct access to our GPs, so help is a quick message away.</p></div>
+   <div className="grid2"><div>
+    <section className="card plum arch" style=${{paddingTop:'40px'}}><img className="archmark" src=${LOGO} alt=""/><span className="kind">Your plan</span><h3 style=${{fontSize:'24px'}}>Lamena membership</h3>
+      <p className="meta">Active · renews <span className="ph" style=${{background:'rgba(255,255,255,.12)',color:'#fff'}}>[date]</span></p>
+      <button className="btn gold" style=${{alignSelf:'flex-start'}} onClick=${()=>open({k:'chat'})}>Message your GP</button></section>
+   </div><div>
+    <div className="card"><h3>What's included</h3>
+      <div className="li"><span className="ic"><${Ic} n="chat"/></span><span className="tx"><b>Direct access to our GPs</b><span>Messages answered in the app</span></span></div>
+      <div className="li"><span className="ic"><${Ic} n="check"/></span><span className="tx"><b><span className="ph">[Membership benefit]</span></b><span>To confirm with Lamena</span></span></div>
+      <div className="li"><span className="ic"><${Ic} n="check"/></span><span className="tx"><b><span className="ph">[Membership benefit]</span></b><span>To confirm with Lamena</span></span></div>
+      <p className="small muted"><span className="ph">£[price]</span> per month</p></div>
+   </div></div></div>`;
+}
+
+function Profile({s,act}){
+  const T=({k,l,d})=>html`<div className="toggle"><div><b style=${{fontWeight:600}}>${l}</b><p className="small muted">${d}</p></div><button className="sw" role="switch" aria-checked=${!!s.prefs[k]} aria-label=${l} onClick=${()=>act('pref',{k})}></button></div>`;
+  return html`<div className="screen">
+   <div className="hello"><h1>${s.me.name}</h1><p>Your details and preferences</p></div>
+   <div className="grid2"><div><div className="card">
+      <div className="li"><span className="tx"><span>Date of birth</span><b>${s.me.dob}</b></span></div>
+      <div className="li"><span className="tx"><span>Email</span><b>${s.me.email}</b></span></div>
+      <div className="li"><span className="tx"><span>Clinic</span><b>Vision Park, Histon, Cambridge CB24 9AD</b></span></div></div></div>
+   <div><div className="card"><h3>Tell us once</h3><p className="small muted">We share these with whoever sees you, so you don't have to ask each time.</p>
+      <${T} k="female" l="Female clinician preferred" d="Where we can arrange it"/>
+      <${T} k="longer" l="Longer appointments" d="For example, if you have several things to discuss"/>
+      <${T} k="interpreter" l="I'd like an interpreter" d="Booked with your appointment"/>
+      <${T} k="sms" l="Text reminders" d="The day before, and when you can check in"/></div></div></div></div>`;
+}
+
+/* sheets */
+function SheetBody({sh,s,act,close,go,startFlow,dev}){
+  const [pick,setPick]=useState(null);const [conf,setConf]=useState(false);
+  if(sh.k==='res'){const r=LIB.find(x=>x.id===sh.rid);const saved=s.saved.includes(r.id);
+    return html`<${Head} kicker=${'NHS guide · '+r.m+' min read'} title=${r.t} onClose=${close}/>
+     <p>${r.sum}</p>
+     ${r.self.length?html`<div><p className="kind" style=${{marginBottom:'8px'}}>Look after yourself</p><ul className="bul">${r.self.map(x=>html`<li key=${x}>${x}</li>`)}</ul></div>`:null}
+     ${r.help.length?html`<div className="alert red" style=${{flexDirection:'column',gap:'6px',padding:'14px'}}><p className="kind" style=${{color:'var(--urgent)'}}>Get help if</p><ul className="bul">${r.help.map(x=>html`<li key=${x}>${x}</li>`)}</ul></div>`:null}
+     <a className="btn gold wide" href=${r.url} target="_blank" rel="noopener">Read the full guide on NHS.uk <${Ic} n="out" w=${17}/></a>
+     <div className="btns"><button className="save" aria-pressed=${saved} onClick=${()=>act('save',{rid:r.id})}><${Ic} n="bookmark" w=${15}/>${saved?'Saved':'Save for later'}</button><button className="btn ghost" onClick=${()=>{close();startFlow()}}>Still worried? Book a GP</button></div>
+     <p className="small muted">A short summary for quick reading. The NHS page has the full, up-to-date guidance.</p>`}
+  if(sh.k==='chat')return html`<${Head} kicker="Members' messaging" title="Message your GP" onClose=${close}/><${Chat} s=${s} act=${act} dev=${dev+'-sheet'}/>`;
+  if(sh.k==='appt'){const a=s.appts.find(x=>x.id===sh.aid);if(!a)return html`<${Head} title="Appointment cancelled" onClose=${close}/>`;
+    if(sh.move){const days=OPEN_DAYS.slice(0,4);
+      return html`<${Head} kicker=${a.svc} title="Move appointment" onClose=${close}/>
+       ${days.map(off=>{const sl=slotsFor(off);return sl.length?html`<div key=${off}><p className="kind" style=${{marginBottom:'8px'}}>${dayLabel(at(off,12))}</p><div className="slots">${sl.map(t=>html`<button key=${t} className="slot" aria-pressed=${pick===t} onClick=${()=>setPick(t)}>${hm(t)}</button>`)}</div></div>`:null})}
+       <button className="btn gold wide" disabled=${!pick} onClick=${()=>{act('appt:resched',{id:a.id,t:pick});close()}}>${pick?'Move to '+when(pick):'Pick a new time'}</button>`}
+    return html`<${Head} kicker=${a.status} title=${a.svc} onClose=${close}/>
+     <div className="card" style=${{padding:'6px 16px'}}>
+      <div className="li"><span className="ic"><${Ic} n="cal"/></span><span className="tx"><b>${when(a.t)}</b><span>${a.who}</span></span></div>
+      <div className="li"><span className="ic"><${Ic} n=${a.mode==='Video call'?'video':a.mode==='Telephone'?'phone':'pin'}/></span><span className="tx"><b>${a.mode==='In person'?'Vision Park, Histon':a.mode}</b><span>${a.mode==='In person'?'Regus, Compass House, CB24 9AD':a.mode==='Video call'?'Join from the app 5 minutes before':'We\'ll call your mobile'}</span></span></div>
+      <div className="li"><span className="ic"><${Ic} n="doc"/></span><span className="tx"><b>What you told us</b><span>${a.note}</span></span></div></div>
+     <div className="btns"><button className="btn line" onClick=${()=>act('cal',{})}><${Ic} n="cal" w=${17}/>Add to calendar</button><button className="btn line" onClick=${()=>{close();setTimeout(()=>sh.reopen({k:'appt',aid:a.id,move:true}),0)}}>Move it</button></div>
+     ${conf?html`<div className="alert red" style=${{flexDirection:'column',padding:'14px'}}><p>Cancel ${a.svc.toLowerCase()} on ${when(a.t)}? The time goes back to other patients. <span className="ph">[Cancellation policy]</span></p>
+       <div className="btns"><button className="btn" style=${{background:'var(--urgent)',color:'#fff'}} onClick=${()=>{act('appt:cancel',{id:a.id});close()}}>Yes, cancel it</button><button className="btn ghost" onClick=${()=>setConf(false)}>Keep it</button></div></div>`
+      :html`<button className="btn ghost" style=${{alignSelf:'flex-start',color:'var(--urgent)',textDecorationColor:'var(--urgent)'}} onClick=${()=>setConf(true)}>I can't make it</button>`}`}
+  if(sh.k==='result'){const r=s.results.find(x=>x.id===sh.id);
+    return html`<${Head} kicker=${'Result · '+dayLabel(r.t)} title=${r.name} onClose=${close}/>
+     <span className=${'badge '+r.tone} style=${{alignSelf:'flex-start'}}>${r.verdict}</span><p>${r.note}</p>
+     <table className="vals"><tbody>${r.vals.map(([n,v,rg,p])=>html`<tr key=${n}><td>${n}<div className="bar"><i style=${{left:(p*100)+'%'}}></i></div></td><td>${v}</td><td>${rg}</td></tr>`)}</tbody></table>
+     <p className="small muted">Questions about this result? Message your GP from your inbox.</p>`}
+  return null;
+}
+
+/* one device instance */
+const TABS=[['home','Home','home'],['book','Book','plus'],['visits','Visits','cal'],['library','Library','book'],['inbox','Inbox','inbox']];
+function App({s,act,dev}){
+  const [tab,setTab]=useState('home');const [step,setStep]=useState(1);const [sheet,setSheet]=useState(null);const [toast,setToast]=useState('');const [flash,setFlash]=useState(false);
+  const mainRef=useRef(null);const tRef=useRef(0);
+  const go=t=>{setTab(t);if(t==='book')setStep(1);mainRef.current&&mainRef.current.scrollTo({top:0})};
+  const goStep=n=>{setStep(n);mainRef.current&&mainRef.current.scrollTo({top:0})};
+  const startFlow=()=>go('book');
+  const open=x=>setSheet({...x,reopen:open});
+  const say=m=>{setToast(m);clearTimeout(tRef.current);tRef.current=setTimeout(()=>setToast(''),2400)};
+  const actHere=(type,p)=>{if(type==='cal'){say('Added to your calendar');return}
+    act(type,p,dev);
+    if(type==='req:submit'){setTab('done');mainRef.current&&mainRef.current.scrollTo({top:0});return}
+    if(type!=='save'&&LABEL[type])say(LABEL[type]);};
+  useEffect(()=>{if(s.nav.n){go(s.nav.tab);setSheet(null)}},[s.nav.n]);
+  useEffect(()=>{if(!s.sync.n)return;if(s.sync.src===dev){if(s.sync.label&&(s.sync.label===LABEL.save||s.sync.label===LABEL.unsave))say(s.sync.label);return}
+    setFlash(true);say(s.sync.src==='clinic'?s.sync.label:s.sync.label+(s.sync.src==='web'?' on web':' on phone'));const t=setTimeout(()=>setFlash(false),2200);return()=>clearTimeout(t)},[s.sync.n]);
+  const unread=s.results.filter(r=>r.unread).length;
+  const pending=s.appts.filter(a=>a.status!=='Confirmed').length;
+  const badge=k=>k==='inbox'?unread:k==='visits'?pending:0;
+  const props={s,act:actHere,open,go,dev,startFlow};
+  let body;
+  if(tab==='book')body=html`<${Flow} ...${props} step=${step} setStep=${goStep}/>`;
+  else if(tab==='done')body=html`<${Done} ...${props}/>`;
+  else{const C={home:Home,visits:Visits,library:Library,inbox:Inbox,membership:Membership,profile:Profile}[tab]||Home;body=html`<${C} ...${props}/>`}
+  const navTab=tab==='done'?'visits':tab;
+  return html`<div className="app">
+    <aside className="side" aria-label="Sections">
+      <div className="logo"><img src=${LOGO} alt=""/><b>Lamena<br/>Clinics<small>Your private GP</small></b></div>
+      <button className="btn gold cta" onClick=${startFlow}><${Ic} n="plus" w=${18}/>Check in and book</button>
+      <nav>${[['home','Home','home'],['visits','Appointments','cal'],['library','Library','book'],['inbox','Inbox','inbox'],['membership','Membership','card'],['profile','Your details','user']].map(([k,l,i])=>html`<button key=${k} aria-current=${navTab===k?'page':undefined} onClick=${()=>go(k)}><${Ic} n=${i}/>${l}${badge(k)?html`<span className="dotn">${badge(k)}</span>`:null}</button>`)}</nav>
+      <div className="foot"><b>Emergency? Call 999.</b><br/>Clinic: ${PHONE}</div>
+    </aside>
+    <header className="top">
+      <div className="logo"><img src=${LOGO} alt=""/><b>Lamena</b></div>
+      <span className=${'sync'+(flash?' flash':'')} aria-live="polite"><i></i>${flash?'Updated':'Synced'}</span>
+      <button className="avatar" onClick=${()=>go('profile')} aria-label="Your details">AM</button>
+    </header>
+    <main className="main" ref=${mainRef}>${body}</main>
+    <nav className="tabs" aria-label="Sections">${TABS.map(([k,l,i])=>html`<button key=${k} aria-current=${navTab===k?'page':undefined} onClick=${()=>go(k)}><${Ic} n=${i}/>${l}${badge(k)?html`<span className="dotn">${badge(k)}</span>`:null}</button>`)}</nav>
+    ${sheet?html`<${Sheet} label="Details" onClose=${()=>setSheet(null)}><${SheetBody} key=${sheet.k+(sheet.rid||sheet.aid||sheet.id||'')+(sheet.move?'m':'')} sh=${sheet} s=${s} act=${actHere} close=${()=>setSheet(null)} go=${go} startFlow=${startFlow} dev=${dev}/><//>`:null}
+    ${toast?html`<div className="toast" role="status">${toast}</div>`:null}
+  </div>`;
+}
+
+/* showcase root */
+const mq=q=>window.matchMedia(q).matches;
+function Root(){
+  const [s,dispatch]=useReducer(reducer,init);
+  const [wide,setWide]=useState(mq('(min-width:1180px)'));const [native,setNative]=useState(mq('(max-width:759px)'));
+  const [view,setView]=useState(()=>{try{return localStorage.getItem('lamena-view')||'both'}catch(e){return'both'}});
+  useEffect(()=>{const f=()=>{setWide(mq('(min-width:1180px)'));setNative(mq('(max-width:759px)'))};window.addEventListener('resize',f);return()=>window.removeEventListener('resize',f)},[]);
+  const setV=v=>{setView(v);try{localStorage.setItem('lamena-view',v)}catch(e){}};
+  const act=useCallback((type,p,src)=>{
+    if(type==='req:submit'){const nid=id('n');dispatch({type,...p,id:nid,src});setTimeout(()=>dispatch({type:'req:confirm',id:nid}),6000);return}
+    if(type==='msg:send'){dispatch({type,...p,src});setTimeout(()=>dispatch({type:'msg:auto'}),3500);return}
+    dispatch({type,...p,src});
+  },[]);
+  const tryIt=tab=>{dispatch({type:'nav',tab});window.scrollTo({top:0,behavior:'smooth'})};
+  const v=native?'native':(!wide&&view==='both')?'web':view;
+  const web=html`<div className="dev-col web"><div className="dev-cap"><span>Web app · any browser</span><span>app.lamenaclinics.co.uk</span></div>
+    <div className="browser"><div className="chrome"><span><i></i><i></i><i></i></span><span className="url">app.lamenaclinics.co.uk</span><span style=${{width:'51px'}}></span></div><${App} s=${s} act=${act} dev="web"/></div></div>`;
+  const phone=html`<div className="dev-col"><div className="dev-cap"><span>Phone app · iOS and Android</span></div>
+    <div className="phone"><div className="phone-screen"><div className="sbar"><span>${hm(Date.now())}</span><span className="sig"><span style=${{fontSize:'12px'}}>5G</span><b></b></span></div><${App} s=${s} act=${act} dev="phone"/></div></div></div>`;
+  const why=html`<div className="why">
+    <section><p className="kind">Patient frustrations</p><h2>What it fixes for patients</h2><ul>
+      <li><s>Not knowing the price until the end</s><b>Every service shows its price before you book</b><button onClick=${()=>tryIt('book')}>Try it</button></li>
+      <li><s>"Is this serious?" late at night</s><b>Red-flag words bring up 999, 111 and Samaritans guidance straight away</b><button onClick=${()=>tryIt('book')}>Try it</button></li>
+      <li><s>Waiting with nothing to go on</s><b>Trusted guides appear as you type, and you can open, read and save them</b><button onClick=${()=>tryIt('book')}>Try it</button></li>
+      <li><s>Repeating your story at the appointment</s><b>A two-minute check-in your GP reads beforehand</b><button onClick=${()=>tryIt('book')}>Try it</button></li>
+      <li><s>Results that read like code</s><b>Plain-English verdict first, values second</b><button onClick=${()=>tryIt('inbox')}>See it</button></li>
+      <li><s>Explaining your needs every time</s><b>Preferences saved once and shared with your clinician</b><button onClick=${()=>tryIt('profile')}>See it</button></li></ul></section>
+    <section><p className="kind">Clinic pain points</p><h2>What it fixes for the Lamena team</h2><ul>
+      <li><s>Consultations that start from zero</s><b>Symptoms, duration, impact and photos arrive before the appointment</b><button onClick=${()=>tryIt('book')}>Try it</button></li>
+      <li><s>Missed appointments and lost revenue</s><b>Reminders, one-tap move or cancel, and "running late" that warns reception</b><button onClick=${()=>tryIt('visits')}>See it</button></li>
+      <li><s>Emergencies booked as routine</s><b>Safety prompts before any request reaches the clinic</b><button onClick=${()=>tryIt('book')}>Try it</button></li>
+      <li><s>Phones tied up with "any update?" calls</s><b>Status, results, documents and messages in one inbox</b><button onClick=${()=>tryIt('inbox')}>See it</button></li>
+      <li><s>Abandoned bookings</s><b>Three short steps from symptoms to a confirmed time</b><button onClick=${()=>tryIt('book')}>Try it</button></li>
+      <li><s>Membership value that's hard to see</s><b>Members message their GP in the app and see what's included</b><button onClick=${()=>tryIt('membership')}>See it</button></li></ul></section>
+  </div>`;
+  if(v==='native')return html`<div><div className="native"><${App} s=${s} act=${act} dev="phone"/></div><div className="show">${why}</div></div>`;
+  return html`<div className="show">
+    <div className="show-head"><div className="wm"><img src=${LOGO} alt=""/><span><b>Lamena Clinics</b><small>Patient app concept</small></span></div>
+      <p className="sub">One account on the web and on the phone. Book, check in or save a guide in one and watch the other update. The account shown is example data.</p>
+      <div className="seg" role="group" aria-label="View">${(wide?[['both','Side by side'],['web','Web'],['phone','Phone']]:[['web','Web'],['phone','Phone']]).map(([k,l])=>html`<button key=${k} aria-pressed=${v===k} onClick=${()=>setV(k)}>${l}</button>`)}</div></div>
+    <div className="stage">${v!=='phone'?web:null}${v!=='web'?phone:null}</div>
+    ${why}
+  </div>`;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(html`<${Root}/>`);
+})();
+</script>
+</body>
+</html>
