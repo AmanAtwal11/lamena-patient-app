@@ -154,7 +154,8 @@ a{color:var(--gold-ink)}
 .plum .datebox{background:rgba(255,255,255,.12);color:#fff}
 .dwd{font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
 .dnum{font-size:22px;font-weight:700;line-height:1.1}
-.quick{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.quick{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.qlink{min-width:0;overflow-wrap:anywhere}
 .qlink{display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 4px;border-radius:18px;border:1px solid var(--line);background:var(--paper);font-size:12.5px;font-weight:600;text-align:center;position:relative;line-height:1.2}
 .qlink svg{width:24px;height:24px}
 .qlink:hover{border-color:var(--ink)}
